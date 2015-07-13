@@ -1,11 +1,13 @@
 
 /**
- * Retrieves all inbox threads. If IT support email, then create
- * a story in Tracker.
- * For more information on using the GMail API, see
- * https://developers.google.com/apps-script/reference/gmail/
- */
-function processInbox() {
+ ** Retrieves all inbox threads. If IT support email,
+ ** add to tracking spreadsheet.  
+ ** For more information on using the GMail API, see
+ ** https://developers.google.com/apps-script/reference/gmail/
+**/
+
+function processInbox() {//start function
+//set variables for gmail labels
   var newLabel = GmailApp.getUserLabelByName("Helpdesk/Processed"),
       oldLabel = GmailApp.getUserLabelByName("Helpdesk/New"),
       threads = oldLabel.getThreads(),
@@ -13,7 +15,7 @@ function processInbox() {
    
   // get all threads with old label
   for (x = 0; x < threads.length; x++){
-    // switch labels
+  // switch labels from 'new' to 'processed'
     threads[x].addLabel(newLabel).removeLabel(oldLabel).refresh();
      
     //get message details
