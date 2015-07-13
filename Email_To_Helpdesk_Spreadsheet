@@ -1,0 +1,62 @@
+
+/**
+ * Retrieves all inbox threads. If IT support email, then create
+ * a story in Tracker.
+ * For more information on using the GMail API, see
+ * https://developers.google.com/apps-script/reference/gmail/
+ */
+function processInbox() {
+  var newLabel = GmailApp.getUserLabelByName("Helpdesk/Processed"),
+      oldLabel = GmailApp.getUserLabelByName("Helpdesk/New"),
+      threads = oldLabel.getThreads(),
+      x = 0;
+   
+  // get all threads with old label
+  for (x = 0; x < threads.length; x++){
+    // switch labels
+    threads[x].addLabel(newLabel).removeLabel(oldLabel).refresh();
+     
+    //get message details
+    var msg = threads[x].getMessages(),
+        subject = msg[0].getSubject(),
+        body = msg[0].getPlainBody(), 
+        from = msg[0].getFrom();
+        body = body.split("--")[0]; //removes the signature line from most messages; google uses -- as the default signature line delimiter
+      
+    var currentdate = new Date(); //this formats the date so that it is the same as the way the google form inputs it; this allows the 'time open' formula to work
+
+    var datetime = (currentdate.getMonth()+1) + "/" + currentdate.getDate() + "/"+ currentdate.getFullYear() 
+    + " " + currentdate.getHours() + ":" 
+    + currentdate.getMinutes() + ":" + currentdate.getSeconds();
+      
+    var y = 1;
+    
+    if (y = threads.length){ //this prevents the spreadsheet from filling up with "undefined"; it only processes the info if there is one in the inbox
+    //everything below gets the helpdesk spreadsheet by ID, then calls the sheet "form response", then adds in all of the information from the email
+    var ss = SpreadsheetApp.openById("XXXXX"); //this ID can be found in the URL of the spreadsheet itself, does not matter which sheet of the spreadsheet
+    var sheet = ss.getSheetByName("Form Responses 1");
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var nextRow = sheet.getLastRow(); // get next row
+    var cell = sheet.getRange('a1');
+    var col = 0;
+    for (i in headers){ // loop through the headers and if a parameter name matches the header name insert the value
+    if (headers[i] == "Description"){
+      val = body;
+    } else if (headers[i] == "Urgency"){
+      val = subject; 
+    } else if (headers[i] == "Timestamp"){
+      val = datetime;
+    } else if (headers[i] == "Status"){
+      val = "New";
+    } else if (headers[i] == "Username"){ 
+      val = from;
+    } else {
+      val = "";
+      }
+    cell.offset(nextRow, col).setValue(val);
+    col++;
+  }//END FOR LOOP
+}//END IF LOOP
+}//END FOR LOOP
+}//END FUNCTION
+;
