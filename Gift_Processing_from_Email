@@ -1,0 +1,73 @@
+
+/**
+ * Retrieves all inbox threads. If development gifts update, create
+ * an entry in Salesforce update spreadsheet.
+ * For more information on using the GMail API, see
+ * https://developers.google.com/apps-script/reference/gmail/
+ */
+function processInbox() {
+  var newLabel = GmailApp.getUserLabelByName("Pledged/Processed"),
+      oldLabel = GmailApp.getUserLabelByName("Pledged/New"),
+      threads = oldLabel.getThreads(),
+      x = 0;
+   
+  // get all threads with old label
+  for (x = 0; x < threads.length; x++){
+    // switch labels
+    threads[x].addLabel(newLabel).removeLabel(oldLabel).refresh();
+     
+    //get message details
+    var msg = threads[x].getMessages(),
+        subject = msg[0].getSubject(),
+        body = msg[0].getPlainBody(), 
+        from = msg[0].getFrom();
+        body = body.split("--")[0]; //removes the signature line from most messages; google uses -- as the default signature line delimiter
+   
+    var currentdate = new Date(); //this formats the date so that it is the same as the way the google form inputs it; this allows the 'time open' formula to work
+    var datetime = (currentdate.getMonth()+1) + "/" + currentdate.getDate() + "/"+ currentdate.getFullYear() 
+    + " " + currentdate.getHours() + ":" 
+    + currentdate.getMinutes() + ":" + currentdate.getSeconds();
+     
+     
+     
+     var values = body.split(/Notes:|Donor name:|Amount:|Stage:/);
+     
+     
+     var y = 1;
+     if (y <= threads.length){ //this prevents the spreadsheet from filling up with "undefined"; it only processes the info if there is one in the inbox
+    //everything below gets the helpdesk spreadsheet by ID, then calls the sheet "form response", then adds in all of the information from the email
+    var ss = SpreadsheetApp.openById(//SPREADSHEETID); //this ID can be found in the URL of the spreadsheet itself, does not matter which sheet of the spreadsheet
+    var sheet = ss.getSheetByName("Pledged");
+    
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var nextRow = sheet.getLastRow(); // get next row
+    var cell = sheet.getRange('a1');
+    var col = 0;
+    
+   for (i in headers){ //LOOP THROUGH ALL HEADERS AND FILL IN CORRECT VALUES FROM EMAIL
+if (headers[i] == "Donor name"){
+	val = values[1];
+} else if (headers[i] == "Stage"){
+	val = values[2];
+} else if (headers[i] == "Amount"){
+	val = values[3];
+} else if (headers[i] == "Notes"){
+	val = values[4];
+} else if (headers[i] == "Timestamp"){
+	val = datetime;
+} else if (headers[i] == "Officer"){
+	val = from;
+} else if (headers[i] == "In Salesforce?"){
+    val = "no";
+} else { 
+    val = ""
+    }
+     
+    cell.offset(nextRow, col).setValue(val);
+    col++;
+    
+  }//END IF
+  }//END IF
+  }//END FOR
+  }//END FUNCTION
+  
